@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ProductCard from "./ProductCard/ProductCard";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -6,35 +6,55 @@ const API_URL = "api";
 
 export default function App() {
   // Ces informations ne sont pas forcément nécessaires, vous pouvez les adapter à votre convenance
-  const [products,   setProducts]   = useState([]);
+  const [products, setProducts] = useState([]);
   const [pagination, setPagination] = useState(null);
-  const [loading,    setLoading]    = useState(false);
-  const [error,      setError]      = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const [page,     setPage]     = useState(1);
-  const [limit]                 = useState(10);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
   const [category, setCategory] = useState("");
-  const [sort,     setSort]     = useState("createdAt");
-  const [order,    setOrder]    = useState("desc");
+  const [sort, setSort] = useState("createdAt");
+  const [order, setOrder] = useState("desc");
 
-    useEffect(() => {
-    async function fetchAllProducts() {
-        const res = await fetch(BACKEND_URL + API_URL);
-        return res.json();
-    }
+  const observerTarget = useRef(null);
 
-    fetchAllProducts().then((data) => {
-        console.log(data);
-        setProducts(data);
-    });
-}, [page, limit, category, sort, order]);
+  useEffect(() => {
+    const skip = (page - 1) * limit;
+
+    fetch(`${BACKEND_URL}api/products?limit=${limit}&skip=${skip}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setProducts((prev) => [...prev, ...data]);
+      });
+  }, [page]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          // charge la page suivante
+          setPage((prev) => prev + 1);
+          console.log("coucou");
+        }
+      },
+      { threshold: 0.5 }, // déclenche quand 50% visible
+    );
+
+    if (observerTarget.current) observer.observe(observerTarget.current);
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="app">
       <div className="header">
         <h1>Catalogue produits</h1>
         <div className="filters">
-          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
             <option value="">Toutes categories</option>
             <option value="shoes">Chaussures</option>
             <option value="clothing">Vetements</option>
@@ -54,7 +74,7 @@ export default function App() {
       </div>
 
       {loading && <p className="loading">Chargement...</p>}
-      {error   && <p className="error">Erreur : {error}</p>}
+      {error && <p className="error">Erreur : {error}</p>}
 
       {!loading && !error && (
         <>
@@ -65,11 +85,10 @@ export default function App() {
               {products.map((product) => (
                 <ProductCard key={product._id} product={product} />
               ))}
+              <div ref={observerTarget} /> {/* élément invisible en bas */}
             </div>
           )}
-          {pagination && (
-            <div />
-          )}
+          {pagination && <div />}
         </>
       )}
     </div>

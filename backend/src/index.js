@@ -1,21 +1,34 @@
-const express  = require("express");
-const cors     = require("cors");
+const express = require("express");
+const cors = require("cors");
 const { MongoClient } = require("mongodb");
 require("dotenv").config();
 
-const app       = express();
-const PORT      = process.env.PORT || 3001;
+const app = express();
+const PORT = process.env.PORT || 3001;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017";
 
 async function getProducts(db) {
-    const products = await db.collection('products').find().toArray()
-    // console.log(products);
-    return products;
+  const products = await db.collection("products").find().toArray();
+  return products;
+}
+
+async function registerRoutes(app, db) {
+  app.get("/api/products", async (req, res) => {
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = parseInt(req.query.skip) || 0;
+
+    const products = await db
+      .collection("products")
+      .find()
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+
+    res.json(products);
+  });
 }
 
 async function start() {
-  console.log(MONGO_URI)
-  console.log(PORT)
   const client = new MongoClient(MONGO_URI);
   await client.connect();
   console.log("Connecté à MongoDB");
@@ -26,12 +39,11 @@ async function start() {
   app.use(cors());
   app.use(express.json());
 
-  app.get('/api', async (req, res) => {
-    const products = await getProducts(db);
-    res.send(products);
-  });
+  registerRoutes(app, db);
 
-  app.listen(PORT, () => console.log("Serveur demarre sur http://localhost:" + PORT));
+  app.listen(PORT, () =>
+    console.log("Serveur demarre sur http://localhost:" + PORT),
+  );
 }
 
 start().catch((err) => {
