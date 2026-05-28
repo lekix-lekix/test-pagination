@@ -7,7 +7,15 @@ const app       = express();
 const PORT      = process.env.PORT || 3001;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017";
 
+async function getProducts(db) {
+    const products = await db.collection('products').find().toArray()
+    // console.log(products);
+    return products;
+}
+
 async function start() {
+  console.log(MONGO_URI)
+  console.log(PORT)
   const client = new MongoClient(MONGO_URI);
   await client.connect();
   console.log("Connecté à MongoDB");
@@ -17,6 +25,11 @@ async function start() {
 
   app.use(cors());
   app.use(express.json());
+
+  app.get('/api', async (req, res) => {
+    const products = await getProducts(db);
+    res.send(products);
+  });
 
   app.listen(PORT, () => console.log("Serveur demarre sur http://localhost:" + PORT));
 }

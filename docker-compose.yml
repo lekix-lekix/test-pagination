@@ -36,6 +36,8 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    env_file:
+      - .env
 
 volumes:
   mongo_data:

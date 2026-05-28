@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import ProductCard from "./ProductCard/ProductCard";
 
-const API_URL = "/api/products";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const API_URL = "api";
 
 export default function App() {
   // Ces informations ne sont pas forcément nécessaires, vous pouvez les adapter à votre convenance
@@ -15,9 +17,17 @@ export default function App() {
   const [sort,     setSort]     = useState("createdAt");
   const [order,    setOrder]    = useState("desc");
 
-  useEffect(() => {
-    // a completer...
-  }, [page, limit, category, sort, order]);
+    useEffect(() => {
+    async function fetchAllProducts() {
+        const res = await fetch(BACKEND_URL + API_URL);
+        return res.json();
+    }
+
+    fetchAllProducts().then((data) => {
+        console.log(data);
+        setProducts(data);
+    });
+}, [page, limit, category, sort, order]);
 
   return (
     <div className="app">
@@ -53,7 +63,7 @@ export default function App() {
           ) : (
             <div className="product-grid">
               {products.map((product) => (
-                <div key={product._id} />
+                <ProductCard key={product._id} product={product} />
               ))}
             </div>
           )}
