@@ -11,38 +11,68 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(15);
   const [category, setCategory] = useState("");
   const [sort, setSort] = useState("createdAt");
   const [order, setOrder] = useState("desc");
 
+  const page = useRef(1);
   const observerTarget = useRef(null);
+  const firstRender = useRef(true);
+  const categoryChanged = useRef(false);
+  const categoryRef = useRef("");
+
+  const fetchProducts = (cat, p) => {
+    const skip = (p.current - 1) * limit;
+    const url = cat
+    ? `${BACKEND_URL}${API_URL}/products?limit=${limit}&skip=${skip}&category=${cat}`
+    : `${BACKEND_URL}${API_URL}/products?limit=${limit}&skip=${skip}`;
+    
+    fetch(url)
+    .then((res) => res.json())
+    .then((data) => {
+        if (categoryChanged.current) {
+            setProducts(data);
+            categoryChanged.current = false;
+        }
+        else
+            setProducts((prev) => [...prev, ...data]);
+    });
+  };
 
   useEffect(() => {
-    const skip = (page - 1) * limit;
+    categoryRef.current = category;
+    categoryChanged.current = true;
+    page.current = 1;
+    fetchProducts(category, page);
+  }, [category]);
 
-    fetch(`${BACKEND_URL}api/products?limit=${limit}&skip=${skip}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setProducts((prev) => [...prev, ...data]);
-      });
-  }, [page]);
+  useEffect(() => {
+    const sortedProducts = [...products].sort((a, b) => {
+      let diff;
+      if (sort == "createdAt") {
+        diff = new Date(a.createdAt) - new Date(b.createdAt);
+      } else if (sort == "price") {
+        diff = parseInt(a.price) - parseInt(b.price);
+      } else if (sort == "name") {
+        diff = String(a.name).localeCompare(String(b.name));
+      }
+      return order === "asc" ? diff : -diff;
+    });
+    setProducts(sortedProducts);
+  }, [sort, order]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          // charge la page suivante
-          setPage((prev) => prev + 1);
-          console.log("coucou");
+            page.current += 1;
+            fetchProducts(categoryRef.current, page);
         }
       },
       { threshold: 0.5 }, // déclenche quand 50% visible
     );
-
     if (observerTarget.current) observer.observe(observerTarget.current);
-
     return () => observer.disconnect();
   }, []);
 
@@ -85,10 +115,10 @@ export default function App() {
               {products.map((product) => (
                 <ProductCard key={product._id} product={product} />
               ))}
-              <div ref={observerTarget} /> {/* élément invisible en bas */}
             </div>
           )}
           {pagination && <div />}
+          <div ref={observerTarget} /> {/* élément invisible en bas */}
         </>
       )}
     </div>

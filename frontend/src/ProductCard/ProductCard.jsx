@@ -1,10 +1,11 @@
 import "./ProductCard.css";
 
 export default function ProductCard({ product }) {
-  const { name, description, price, stock, category } = product;
+  const { name, description, price, stock, category, createdAt } = product;
+  const date = new Date(createdAt).toLocaleDateString("fr-FR");
 
   return (
-    <div className="product-card shadow-md border border-black">
+    <div className="product-card shadow-md border border-black hover:shadow-2xl transition-shadow duration-350">
       <div className="product-image">
         <span>🖼️</span>
       </div>
@@ -20,6 +21,7 @@ export default function ProductCard({ product }) {
         </div>
         <button className="mt-auto w-full">Ajouter au panier</button>{" "}
       </div>
+      <p className="text-right">{date}</p>
     </div>
   );
 }

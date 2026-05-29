@@ -16,10 +16,17 @@ async function registerRoutes(app, db) {
   app.get("/api/products", async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = parseInt(req.query.skip) || 0;
+    const category = req.query.category;
+
+    const filter = {};
+
+    if (req.query.category && req.query.category.trim() !== "") {
+      filter.category = req.query.category;
+    }
 
     const products = await db
       .collection("products")
-      .find()
+      .find(filter)
       .skip(skip)
       .limit(limit)
       .toArray();
