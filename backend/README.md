@@ -6,14 +6,14 @@ Retourne une liste paginée de produits.
 
 ### Paramètres
 
-| Paramètre  | Type   | Défaut | Description                        |
-|------------|--------|--------|------------------------------------|
-| `limit`    | number | 10     | Nombre de produits à retourner     |
-| `skip`     | number | 0      | Nombre de produits à sauter        |
-| `category` | string | -      | Filtre par catégorie ex: "clothing"|
+| Paramètre  | Type   | Défaut     | Description                             |
+|------------|--------|------------|-----------------------------------------|
+| `page`     | number | 1          | Numéro de page                          |
+| `limit`    | number | 10         | Nombre de produits à retourner (max 100)|
+| `category` | string | -          | Filtre par catégorie ex: "clothing"     |
 
 ### Exemple
-GET /api/products?limit=15&skip=0&category=clothing
+GET /api/products?page=2&limit=15&category=clothing
 
 ### Réponse
 

@@ -37,7 +37,7 @@ async function registerRoutes(app, db) {
   app.get("/api/products", async (req, res) => {
     try {
       const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100);
-      const page  = Math.max(parseInt(req.query.page) || 1, 1);
+      const page = Math.max(parseInt(req.query.page) || 1, 1);
       const skip = (page - 1) * limit;
       const filter = {};
 
@@ -71,7 +71,11 @@ async function start() {
   const db = client.db("shop");
   app.locals.db = db;
 
-  app.use(cors());
+  app.use(
+    cors({
+      origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    }),
+  );
   app.use(express.json());
 
   registerRoutes(app, db);
