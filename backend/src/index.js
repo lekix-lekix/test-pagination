@@ -35,24 +35,31 @@ const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017";
 
 async function registerRoutes(app, db) {
   app.get("/api/products", async (req, res) => {
-    const limit = parseInt(req.query.limit) || 15;
-    const skip = parseInt(req.query.skip) || 0;
-    const category = req.query.category;
+    try {
+      const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100);
+      const page  = Math.max(parseInt(req.query.page) || 1, 1);
+      const skip = (page - 1) * limit;
+      const filter = {};
 
-    const filter = {};
+      if (
+        req.query.category &&
+        /^[a-zA-Z0-9-]+$/.test(req.query.category.trim())
+      ) {
+        filter.category = req.query.category.trim();
+      }
 
-    if (req.query.category && req.query.category.trim() !== "") {
-      filter.category = req.query.category;
+      const products = await db
+        .collection("products")
+        .find(filter)
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+
+      res.json(products);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erreur serveur" });
     }
-
-    const products = await db
-      .collection("products")
-      .find(filter)
-      .skip(skip)
-      .limit(limit)
-      .toArray();
-
-    res.json(products);
   });
 }
 

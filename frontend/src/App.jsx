@@ -23,24 +23,32 @@ export default function App() {
   const categoryRef = useRef("");
 
   const fetchProducts = (cat, p) => {
-    const skip = (p.current - 1) * limit;
+    // -> Fetching products to back-end depending on pagination, limit and category
+    const page = p.current;
     const url = cat
-    ? `${BACKEND_URL}${API_URL}/products?limit=${limit}&skip=${skip}&category=${cat}`
-    : `${BACKEND_URL}${API_URL}/products?limit=${limit}&skip=${skip}`;
-    
-    fetch(url)
-    .then((res) => res.json())
-    .then((data) => {
-        if (categoryChanged.current) {
-            setProducts(data);
-            categoryChanged.current = false;
-        }
-        else
-            setProducts((prev) => [...prev, ...data]);
-    });
-  };
+      ? `${BACKEND_URL}${API_URL}/products?page=${page}&limit=${limit}&category=${cat}`
+      : `${BACKEND_URL}${API_URL}/products?page=${page}&limit=${limit}`;
 
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error("Erreur serveur");
+        return res.json();
+      })
+      .then((data) => {
+        if (categoryChanged.current) {
+          setProducts(data);
+          categoryChanged.current = false;
+        } else {
+          setProducts((prev) => [...prev, ...data]);
+        }
+      })
+      .catch(() => {
+        setError("Erreur de connexion serveur");
+      });
+  };
+  
   useEffect(() => {
+    // -> Checking if category changed to fetch new items from a new category
     categoryRef.current = category;
     categoryChanged.current = true;
     page.current = 1;
@@ -48,6 +56,7 @@ export default function App() {
   }, [category]);
 
   useEffect(() => {
+    // -> Checking if sort parameter changed to sort local items
     const sortedProducts = [...products].sort((a, b) => {
       let diff;
       if (sort == "createdAt") {
@@ -63,14 +72,15 @@ export default function App() {
   }, [sort, order]);
 
   useEffect(() => {
+    // -> Observer after the products displayed to enable infinite scrolling
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-            page.current += 1;
-            fetchProducts(categoryRef.current, page);
+          page.current += 1;
+          fetchProducts(categoryRef.current, page);
         }
       },
-      { threshold: 0.5 }, // déclenche quand 50% visible
+      { threshold: 0.5 },
     );
     if (observerTarget.current) observer.observe(observerTarget.current);
     return () => observer.disconnect();
