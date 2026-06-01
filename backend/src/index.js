@@ -1,21 +1,33 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient } = require("mongodb");
-const {registerAPIRoutes} = require("./api/api")
+const { registerAPIRoutes } = require("./api/api");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017";
 
-async function createIndexes(db) {
+async function createDBIndexes(db) {
+  // -> Creates all possible combinaisons of indexes to optimize looking through the db
   const products = db.collection("products");
-  await products.createIndex({
-    category: 1,
-    price: -1,
-    name: 1,
-    createdAt: -1,
-  });
+
+  const sortFields = ["price", "name", "createdAt"];
+  const orders = [1, -1];
+
+  const indexPromises = [];
+
+  for (const field of sortFields) {
+    for (const order of orders) {
+      indexPromises.push(products.createIndex({ [field]: order, _id: 1 }));
+      indexPromises.push(
+        products.createIndex({ category: 1, [field]: order, _id: 1 }),
+      );
+    }
+  }
+
+  await Promise.all(indexPromises);
+  console.log(`${indexPromises.length} index créés`);
 }
 
 async function start() {
@@ -34,7 +46,7 @@ async function start() {
   );
   app.use(express.json());
 
-  await createIndexes(db);
+  await createDBIndexes(db);
   registerAPIRoutes(app, db);
 
   app.listen(PORT, () =>

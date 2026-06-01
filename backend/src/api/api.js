@@ -26,8 +26,7 @@ function parseQueryString(query) {
   }
 
   if (query.order && ALLOWED_ORDER.includes(query.order)) {
-    if (query.order == "asc") filter.order = 1;
-    else filter.order = -1;
+    query.order == "asc" ? (filter.order = 1) : (filter.order = -1);
   }
 
   return filter;
@@ -78,6 +77,28 @@ export async function registerAPIRoutes(app, db) {
       res.json(products);
     } catch (err) {
       console.error(err);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  });
+
+  // -> Get infos from MongoDB on a particular request
+  app.get("/api/products/explain", async (req, res) => {
+    try {
+      const { limit, skip, sort, order, cat } = parseQueryString(req.query);
+      console.log(req.query);
+      const filter = {};
+      if (cat) filter.category = cat;
+
+      const explanation = await db
+        .collection("products")
+        .find(filter)
+        .sort({ [sort]: order, _id: 1 })
+        .skip(skip)
+        .limit(limit)
+        .explain("executionStats");
+
+      res.json(explanation);
+    } catch (err) {
       res.status(500).json({ error: "Erreur serveur" });
     }
   });
