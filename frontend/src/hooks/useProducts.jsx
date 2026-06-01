@@ -1,26 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import ProductCard from "./ProductCard/ProductCard";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-const API_URL = "api";
-
-export default function App() {
-  // Ces informations ne sont pas forcément nécessaires, vous pouvez les adapter à votre convenance
+export function useProducts() {
   const [products, setProducts] = useState([]);
-//   const [pagination, setPagination] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const [limit] = useState(15);
-  const [category, setCategory] = useState("");
   const [sort, setSort] = useState("createdAt");
   const [order, setOrder] = useState("desc");
+  const [category, setCategory] = useState(null);
 
   const page = useRef(1);
-  const observerTarget = useRef(null);
-  const firstRender = useRef(true);
+  const categoryRef = useRef(category);
   const categoryChanged = useRef(false);
-  const categoryRef = useRef("");
+  const observerTarget = useRef(null);
 
   const fetchProducts = (cat, p, sort, order) => {
     // -> Fetching products to back-end depending on pagination, limit and category
@@ -54,6 +44,7 @@ export default function App() {
         setError("Erreur de connexion serveur");
       });
   };
+
 
   useEffect(() => {
     // -> Checking if category changed to fetch new items from a new category
@@ -92,50 +83,5 @@ export default function App() {
     firstRender.current = false;
   }, []);
 
-  return (
-    <div className="app">
-      <div className="header">
-        <h1>Catalogue produits</h1>
-        <div className="filters">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="">Toutes categories</option>
-            <option value="shoes">Chaussures</option>
-            <option value="clothing">Vetements</option>
-            <option value="accessories">Accessoires</option>
-            <option value="bags">Sacs</option>
-          </select>
-          <select value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="createdAt">Date</option>
-            <option value="price">Prix</option>
-            <option value="name">Nom</option>
-          </select>
-          <select value={order} onChange={(e) => setOrder(e.target.value)}>
-            <option value="asc">Croissant</option>
-            <option value="desc">Decroissant</option>
-          </select>
-        </div>
-      </div>
 
-      {loading && <p className="loading">Chargement...</p>}
-      {error && <p className="error">Erreur : {error}</p>}
-
-      {!loading && !error && (
-        <>
-          {products.length === 0 ? (
-            <p className="empty">Aucun produit trouve.</p>
-          ) : (
-            <div className="product-grid">
-              {products.map((product) => (
-                <ProductCard key={product._id} product={product} />
-              ))}
-            </div>
-          )}
-          <div ref={observerTarget} /> {/* élément invisible en bas */}
-        </>
-      )}
-    </div>
-  );
 }
