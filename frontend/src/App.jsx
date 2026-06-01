@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ProductCard from "./ProductCard/ProductCard";
+import { fetchProducts } from "./api/products";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const API_URL = "api";
@@ -7,7 +8,6 @@ const API_URL = "api";
 export default function App() {
   // Ces informations ne sont pas forcément nécessaires, vous pouvez les adapter à votre convenance
   const [products, setProducts] = useState([]);
-//   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -22,26 +22,9 @@ export default function App() {
   const categoryChanged = useRef(false);
   const categoryRef = useRef("");
 
-  const fetchProducts = (cat, p, sort, order) => {
-    // -> Fetching products to back-end depending on pagination, limit and category
-    const page = p.current;
-    const params = new URLSearchParams({
-      page,
-      limit,
-      sort,
-      order,
-      cat,
-    });
-
-    const url = `${BACKEND_URL}${API_URL}/products?${params}`;
-
-    console.log(url);
-
-    fetch(url)
-      .then((res) => {
-        if (!res.ok) throw new Error("Erreur serveur");
-        return res.json();
-      })
+  const getProducts = (cat, p, sort, order) => {
+    // -> Processing fetched data, replacing already fetched data or adding to already fetched data
+    fetchProducts({ cat, page: page.current, limit, sort, order })
       .then((data) => {
         if (categoryChanged.current) {
           setProducts(data);
@@ -61,14 +44,14 @@ export default function App() {
     categoryRef.current = category;
     categoryChanged.current = true;
     page.current = 1;
-    fetchProducts(category, page, sort, order);
+    getProducts(category, page, limit, sort, order);
   }, [category]);
 
   useEffect(() => {
-    // -> Checking if sorting order or  changed
+    // -> Checking if sorting or ordering changed
     if (firstRender.current) return;
     categoryChanged.current = true;
-    fetchProducts(category, page, sort, order);
+    getProducts(category, page, sort, order);
   }, [sort, order]);
 
   useEffect(() => {
@@ -77,7 +60,7 @@ export default function App() {
       (entries) => {
         if (entries[0].isIntersecting && !firstRender.current) {
           page.current += 1;
-          fetchProducts(categoryRef.current, page, sort, order);
+          getProducts(categoryRef.current, page, sort, order);
         }
       },
       { threshold: 0.5 },
@@ -86,9 +69,9 @@ export default function App() {
     return () => observer.disconnect();
   }, [products, sort, order]);
 
-  // -> Initial rendering
+  // -> Initial rendering, ran only once
   useEffect(() => {
-    fetchProducts(category, page, sort, order);
+    getProducts(category, page, sort, order);
     firstRender.current = false;
   }, []);
 
