@@ -12,9 +12,9 @@ export function useProducts({ category, sort, order, limit }) {
   const categoryChanged = useRef(false);
   const categoryRef = useRef("");
 
-  const getProducts = (cat, p, sort, order) => {
+  const getProducts = (cat, p, limit, sort, order) => {
     // -> Fetch and process data, replacing data in [products] or appending to it
-    fetchProducts({ cat, page: page.current, limit, sort, order })
+    fetchProducts({ cat: cat, page: p.current, limit: limit, sort: sort, order: order })
       .then((data) => {
         if (categoryChanged.current) {
           setProducts(data);
@@ -39,7 +39,7 @@ export function useProducts({ category, sort, order, limit }) {
     // -> Checking if sorting or ordering changed
     if (firstRender.current) return;
     categoryChanged.current = true;
-    getProducts(category, page, sort, order);
+    getProducts(category, page, limit, sort, order);
   }, [sort, order]);
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export function useProducts({ category, sort, order, limit }) {
       (entries) => {
         if (entries[0].isIntersecting && !firstRender.current) {
           page.current += 1;
-          getProducts(categoryRef.current, page, sort, order);
+          getProducts(categoryRef.current, page, limit, sort, order);
         }
       },
       { threshold: 0.5 },

@@ -59,6 +59,7 @@ function parseQueryString(query) {
  */
 
 export async function registerAPIRoutes(app, db) {
+  // -> Main get request that returns and sort products depending query parameters
   app.get("/api/products", async (req, res) => {
     try {
       const { limit, skip, sort, order, cat } = parseQueryString(req.query);
